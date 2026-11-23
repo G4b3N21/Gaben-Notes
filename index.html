@@ -450,9 +450,12 @@
 </head>
 <body>
 
-    <header>
+        <header>
         <h1><span>Gaben</span> Notes</h1>
-        <button class="data-btn" onclick="openDataModal()">Data</button>
+        <div style="display:flex; gap:8px;">
+            <button class="data-btn" id="allTabBtn" onclick="switchTab('all')">All</button>
+            <button class="data-btn" onclick="openDataModal()">Data</button>
+        </div>
     </header>
 
     <div class="search-wrap">
@@ -474,7 +477,7 @@
         <div id="pinnedList"></div>
     </div>
 
-    <div class="list-toolbar">
+       <div class="list-toolbar">
         <div class="section-title" id="currentCategoryTitle">Notes</div>
         <button id="clearDoneBtn" class="clear-done-btn" style="display:none;" onclick="clearDoneItems()">Clear done</button>
     </div>
@@ -579,11 +582,16 @@
             render();
         }
 
-        function switchTab(cat) {
+               function switchTab(cat) {
             currentTab = cat;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.cat === cat);
             });
+            const allBtn = document.getElementById('allTabBtn');
+            if (allBtn) {
+                allBtn.style.borderColor = (cat === 'all') ? 'var(--accent)' : 'var(--border)';
+                allBtn.style.color = (cat === 'all') ? 'var(--accent)' : 'var(--text-main)';
+            }
             render();
         }
 
@@ -662,6 +670,7 @@
             }
 
             const titles = {
+                all: 'All Items',
                 notes: 'Notes',
                 tasks: 'Tasks',
                 shopping: 'Shopping List',
@@ -676,6 +685,7 @@
 
             let filtered = items.filter(item => {
                 if (searchQuery) return item.text.toLowerCase().includes(searchQuery);
+                if (currentTab === 'all') return true;
                 if (currentTab === 'starred') return item.starred;
                 return item.category === currentTab;
             });
@@ -706,7 +716,7 @@
                     <div class="card-body" onclick="openEditor('${item.id}')">
                         <div class="card-text">${escapeHtml(item.text)}</div>
                         <div class="card-meta">
-                            ${(currentTab === 'starred' || searchQuery) ? `<span class="badge">${item.category}</span>` : ''}
+                            ${(currentTab === 'starred' || currentTab === 'all' || searchQuery) ? `<span class="badge">${item.category}</span>` : ''}
                             ${item.category === 'monthly' ? `<span class="badge accent">Monthly</span>` : ''}
                             ${eventBadge ? `<span class="badge ${eventBadge.cls}">${eventBadge.text}</span>` : ''}
                         </div>
