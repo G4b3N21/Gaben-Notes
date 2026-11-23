@@ -393,11 +393,31 @@
             margin-bottom: 12px;
         }
 
-        .tpl-chip {
+                .tpl-chip {
             background-color: var(--bg-input);
             border: 1px solid var(--border);
-            color: var(--text-muted);
+            color: var(--text-main);
             font-size: 12px;
+            padding: 5px 9px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tpl-del {
+            color: var(--text-muted);
+            font-weight: 700;
+            padding-left: 2px;
+        }
+
+        .tpl-save-btn {
+            background-color: var(--accent-soft);
+            border: 1px dashed var(--accent);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
             padding: 5px 10px;
             border-radius: 8px;
             cursor: pointer;
@@ -519,11 +539,7 @@
                 <button class="close-modal" onclick="closeModal('editorModal')">✕</button>
             </div>
 
-             <div class="template-bar">
-                <button type="button" class="tpl-chip" onclick="insertTemplate('Milk\nBread\nEggs\nCoffee\nFruits')">+ Basic Groceries</button>
-                <button type="button" class="tpl-chip" onclick="insertTemplate('Electricity bill - 15th')">+ Monthly Bill</button>
-                <button type="button" class="tpl-chip" onclick="insertTemplate('Morning:\nAfternoon:\nEvening:')">+ Day Plan</button>
-            </div>
+            <div class="template-bar" id="templateBar"></div>
 
             <textarea id="itemText" placeholder="Write something..."></textarea>
 
@@ -564,7 +580,14 @@
     </div>
     <script>
         const STORAGE_KEY = 'my_workspace_data_v1';
+        const TPL_KEY = 'my_workspace_templates_v1';
         const MONTH_KEY = 'my_workspace_last_month';
+
+        let items = [];
+        let templates = [
+            { id: 't1', name: 'Groceries', text: 'Milk\nBread\nEggs\nCoffee' },
+            { id: 't2', name: 'Monthly Bill', text: 'Electricity bill - 15th' }
+        ];
 
         let items = [];
         let currentTab = 'notes';
@@ -575,11 +598,11 @@
         function init() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                try {
-                    items = JSON.parse(saved);
-                } catch (e) {
-                    items = [];
-                }
+                try { items = JSON.parse(saved); } catch (e) { items = []; }
+            }
+            const savedTpls = localStorage.getItem(TPL_KEY);
+            if (savedTpls) {
+                try { templates = JSON.parse(savedTpls); } catch (e) {}
             }
             checkMonthlyReset();
             render();
@@ -828,6 +851,7 @@
             }
 
             updateStarBtnUI();
+            renderTemplates();
             toggleDateInput();
             modal.classList.add('open');
         }
@@ -848,9 +872,47 @@
             btn.innerText = editorStarred ? '★ Starred' : '☆ Star';
         }
 
-        function insertTemplate(tpl) {
+                function renderTemplates() {
+            const bar = document.getElementById('templateBar');
+            if (!bar) return;
+            const chips = templates.map(t => `
+                <div class="tpl-chip" onclick="insertTemplate('${t.id}')">
+                    <span>+ ${escapeHtml(t.name)}</span>
+                    <span class="tpl-del" onclick="deleteTemplate('${t.id}', event)">×</span>
+                </div>
+            `).join('');
+            bar.innerHTML = chips + `<button type="button" class="tpl-save-btn" onclick="saveAsTemplate()">+ Save as template</button>`;
+        }
+
+        function insertTemplate(id) {
+            const tpl = templates.find(t => t.id === id);
+            if (!tpl) return;
             const textEl = document.getElementById('itemText');
-            textEl.value = textEl.value ? textEl.value + '\n' + tpl : tpl;
+            textEl.value = textEl.value ? textEl.value + '\n' + tpl.text : tpl.text;
+        }
+
+        function saveAsTemplate() {
+            const text = document.getElementById('itemText').value.trim();
+            if (!text) {
+                alert('Write some text first, then tap Save as template.');
+                return;
+            }
+            const name = prompt('Template name (short, e.g. Work, Travel):');
+            if (!name || !name.trim()) return;
+            templates.push({
+                id: 'tpl_' + Date.now(),
+                name: name.trim(),
+                text: text
+            });
+            localStorage.setItem(TPL_KEY, JSON.stringify(templates));
+            renderTemplates();
+        }
+
+        function deleteTemplate(id, e) {
+            e.stopPropagation();
+            templates = templates.filter(t => t.id !== id);
+            localStorage.setItem(TPL_KEY, JSON.stringify(templates));
+            renderTemplates();
         }
 
         function saveItem() {
@@ -896,14 +958,15 @@
             document.getElementById('dataModal').classList.add('open');
         }
 
-        function exportData() {
-            const dataStr = JSON.stringify(items, null, 2);
+                function exportData() {
+            const payload = { items: items, templates: templates };
+            const dataStr = JSON.stringify(payload, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const dateTag = new Date().toISOString().slice(0, 10);
             a.href = url;
-            a.download = `workspace-backup-${dateTag}.json`;
+            a.download = `gaben-notes-backup-${dateTag}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -917,12 +980,19 @@
                     const imported = JSON.parse(e.target.result);
                     if (Array.isArray(imported)) {
                         items = imported;
-                        saveToStorage();
-                        closeModal('dataModal');
-                        alert('Backup restored successfully!');
+                    } else if (imported && Array.isArray(imported.items)) {
+                        items = imported.items;
+                        if (Array.isArray(imported.templates)) {
+                            templates = imported.templates;
+                            localStorage.setItem(TPL_KEY, JSON.stringify(templates));
+                        }
                     } else {
                         alert('Invalid backup file.');
+                        return;
                     }
+                    saveToStorage();
+                    closeModal('dataModal');
+                    alert('Backup restored successfully!');
                 } catch (err) {
                     alert('Error reading file.');
                 }
