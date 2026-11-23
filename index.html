@@ -276,6 +276,13 @@
             color: var(--danger);
         }
 
+                .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
         .icon-btn {
             background: none;
             border: none;
@@ -283,9 +290,28 @@
             padding: 2px;
             cursor: pointer;
             color: var(--text-muted);
+            line-height: 1;
         }
 
-        .icon-btn.starred { color: var(--accent); }
+        .icon-btn.starred, .icon-btn.copied { color: var(--accent); }
+
+        .card-text.collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 0 0 0;
+            cursor: pointer;
+            display: inline-block;
+        }
 
         .fab {
             position: fixed;
@@ -706,15 +732,18 @@
                 return;
             }
 
-            listEl.innerHTML = filtered.map(item => {
+                        listEl.innerHTML = filtered.map(item => {
                 const isCheckable = item.category !== 'notes';
                 const eventBadge = item.category === 'events' ? getEventBadge(item.date) : null;
+                const isLong = item.text.length > 150 || item.text.split('\n').length > 4;
+                const isExpanded = expandedIds.has(item.id);
 
                 return `
                 <div class="card ${item.done ? 'done' : ''}">
                     ${isCheckable ? `<div class="check-circle" onclick="toggleDone('${item.id}', event)"></div>` : ''}
                     <div class="card-body" onclick="openEditor('${item.id}')">
-                        <div class="card-text">${escapeHtml(item.text)}</div>
+                        <div class="card-text ${isLong && !isExpanded ? 'collapsed' : ''}">${escapeHtml(item.text)}</div>
+                        ${isLong ? `<button type="button" class="expand-btn" onclick="toggleExpand('${item.id}', event)">${isExpanded ? 'Show less' : 'Show more'}</button>` : ''}
                         <div class="card-meta">
                             ${(currentTab === 'starred' || currentTab === 'all' || searchQuery) ? `<span class="badge">${item.category}</span>` : ''}
                             ${item.category === 'monthly' ? `<span class="badge accent">Monthly</span>` : ''}
@@ -722,14 +751,57 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <button class="icon-btn ${item.starred ? 'starred' : ''}" onclick="toggleStar('${item.id}', event)">
+                        <button class="icon-btn ${item.starred ? 'starred' : ''}" onclick="toggleStar('${item.id}', event)" title="Star">
                             ${item.starred ? '★' : '☆'}
+                        </button>
+                        <button class="icon-btn" id="copy-${item.id}" onclick="copyText('${item.id}', event)" title="Copy">
+                            ⧉
                         </button>
                     </div>
                 </div>
                 `;
             }).join('');
         }
+
+        const expandedIds = new Set();
+
+        function toggleExpand(id, e) {
+            e.stopPropagation();
+            if (expandedIds.has(id)) {
+                expandedIds.delete(id);
+            } else {
+                expandedIds.add(id);
+            }
+            render();
+        }
+
+        function copyText(id, e) {
+            e.stopPropagation();
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(item.text);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = item.text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            const btn = document.getElementById(`copy-${id}`);
+            if (btn) {
+                btn.innerText = '✓';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerText = '⧉';
+                    btn.classList.remove('copied');
+                }, 1200);
+            }
+        }
+
         function openEditor(id = null) {
             editingId = id;
             const modal = document.getElementById('editorModal');
