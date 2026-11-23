@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iPhone PWA & Icon settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="My Notes">
+    <link rel="apple-touch-icon" href="ikon.jpg">
+    <link rel="icon" type="image/jpeg" href="ikon.jpg">
+    <link rel="manifest" href="manifest.json">
+    
+    <title>My Notes</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1E1E22;
+            --bg-input: #27272C;
+            --accent: #D9822B;
+            --accent-soft: rgba(217, 130, 43, 0.16);
+            --text-main: #F2F2F7;
+            --text-muted: #8E8E93;
+            --border: #2C2C32;
+            --danger: #E05252;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 90px) 16px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0 14px 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        h1 span { color: var(--accent); }
+
+        .data-btn {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .search-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-input {
+            width: 100%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 36px 10px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .search-input:focus { border-color: var(--accent); }
+
+        .search-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .tabs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 10px 4px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent-soft);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tab-count {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .pinned-section {
+            background-color: var(--bg-card);
+            border: 1px solid rgba(217, 130, 43, 0.35);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pinned-header {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .pinned-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .pinned-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .list-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            min-height: 28px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clear-done-btn {
+            background: var(--bg-card);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 80px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .card.done { opacity: 0.55; }
+        .card.done .card-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .check-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .card.done .check-circle { background-color: var(--accent); }
+        .check-circle::after {
+            content: "✓";
+            color: #121214;
+            font-size: 13px;
+            font-weight: 800;
+            display: none;
+        }
+        .card.done .check-circle::after { display: block; }
+
+        .card-body {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .card-text {
+            font-size: 15px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background-color: var(--bg-input);
+            color: var(--text-muted);
+        }
+
+        .badge.accent {
+            background-color: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .badge.past {
+            background-color: rgba(224, 82, 82, 0.15);
+            color: var(--danger);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            padding: 2px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .icon-btn.starred { color: var(--accent); }
+
+        .fab {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
+            right: 20px;
+            background-color: var(--accent);
+            color: #121214;
+            border: none;
+            border-radius: 30px;
+            padding: 14px 22px;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            z-index: 50;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal-sheet {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 22px 22px 0 0;
+            padding: 20px 20px calc(env(safe-area-inset-bottom, 20px) + 20px) 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .modal-title { font-size: 18px; font-weight: 700; }
+
+        .close-modal {
+            background: var(--bg-input);
+            border: none;
+            color: var(--text-muted);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        textarea, select, input[type="date"] {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        textarea { min-height: 110px; resize: none; }
+        textarea:focus, select:focus, input[type="date"]:focus { border-color: var(--accent); }
+
+        .template-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .tpl-chip {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .modal-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .star-toggle-btn {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 11px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .star-toggle-btn.active {
+            background-color: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background-color: var(--accent);
+            color: #121214;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            width: 100%;
+            background-color: rgba(224, 82, 82, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(224, 82, 82, 0.3);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>My <span>Notes</span></h1>
+        <button class="data-btn" onclick="openDataModal()">Data</button>
+    </header>
+
+    <div class="search-wrap">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search everything..." oninput="handleSearch()">
+        <button id="searchClear" class="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+
+    <div class="tabs-grid" id="tabsGrid">
+        <button class="tab-btn active" data-cat="notes" onclick="switchTab('notes')">Notes <span class="tab-count" id="cnt-notes"></span></button>
+        <button class="tab-btn" data-cat="tasks" onclick="switchTab('tasks')">Tasks <span class="tab-count" id="cnt-tasks"></span></button>
+        <button class="tab-btn" data-cat="shopping" onclick="switchTab('shopping')">Shopping <span class="tab-count" id="cnt-shopping"></span></button>
+        <button class="tab-btn" data-cat="monthly" onclick="switchTab('monthly')">Monthly <span class="tab-count" id="cnt-monthly"></span></button>
+        <button class="tab-btn" data-cat="events" onclick="switchTab('events')">Events <span class="tab-count" id="cnt-events"></span></button>
+        <button class="tab-btn" data-cat="starred" onclick="switchTab('starred')">★ Starred <span class="tab-count" id="cnt-starred"></span></button>
+    </div>
+
+    <div id="pinnedContainer" class="pinned-section" style="display:none;">
+        <div class="pinned-header">★ Pinned Focus</div>
+        <div id="pinnedList"></div>
+    </div>
+
+    <div class="list-toolbar">
+        <div class="section-title" id="currentCategoryTitle">Notes</div>
+        <button id="clearDoneBtn" class="clear-done-btn" style="display:none;" onclick="clearDoneItems()">Clear done</button>
+    </div>
+
+    <div id="itemList" class="item-list"></div>
+
+    <button class="fab" onclick="openEditor()">+ New</button>
+
+    <div id="editorModal" class="modal-overlay" onclick="closeModalOnBg(event, 'editorModal')">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <div class="modal-title" id="editorTitle">New Item</div>
+                <button class="close-modal" onclick="closeModal('editorModal')">✕</button>
+            </div>
+
+            <div class="template-bar">
+                <button class="tpl-chip" onclick="insertTemplate('Milk\nBread\nEggs\nCoffee\nFruits')">+ Basic Groceries</button>
+                <button class="tpl-chip" onclick="insertTemplate('Electricity bill - 15th')">+ Monthly Bill</button>
+                <button class="tpl-chip" onclick="insertTemplate('Morning:\nAfternoon:\nEvening:')">+ Day Plan</button>
+            </div>
+
+                <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Event Date (for sorting & countdown):</label>
+                <input type="date" id="itemDate">
+            </div>
+
+            <div class="modal-row">
+                <select id="itemCategory" onchange="toggleDateInput()" style="margin-bottom:0;">
+                    <option value="notes">Notes</option>
+                    <option value="tasks">Tasks</option>
+                    <option value="shopping">Shopping</option>
+                    <option value="monthly">Monthly (Auto-resets)</option>
+                    <option value="events">Events (Date-based)</option>
+                </select>
+                <button type="button" id="starToggleBtn" class="star-toggle-btn" onclick="toggleEditorStar()">☆ Star</button>
+            </div>
+
+            <button class="btn-primary" onclick="saveItem()">Save</button>
+            <button id="deleteItemBtn" class="btn-danger" style="display:none;" onclick="deleteCurrentItem()">Delete Item</button>
+        </div>
+    </div>
+
+    <div id="dataModal" class="modal-overlay" onclick="closeModalOnBg(event, 'dataModal')">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <div class="modal-title">Backup & Restore</div>
+                <button class="close-modal" onclick="closeModal('dataModal')">✕</button>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:0; line-height:1.4;">
+                Your data is stored locally on your iPhone. Export a backup file before updating code or switching devices.
+            </p>
+            <button class="btn-secondary" onclick="exportData()">⬇ Export Backup (.json)</button>
+            <button class="btn-secondary" onclick="document.getElementById('importFile').click()">⬆ Import Backup (.json)</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+        </div>
+    </div>
+    <script>
+        const STORAGE_KEY = 'my_workspace_data_v1';
+        const MONTH_KEY = 'my_workspace_last_month';
+
+        let items = [];
+        let currentTab = 'notes';
+        let searchQuery = '';
+        let editingId = null;
+        let editorStarred = false;
+
+        function init() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    items = JSON.parse(saved);
+                } catch (e) {
+                    items = [];
+                }
+            }
+            checkMonthlyReset();
+            render();
+        }
+
+        function checkMonthlyReset() {
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${now.getMonth() + 1}`;
+            const lastMonthStr = localStorage.getItem(MONTH_KEY);
+
+            if (lastMonthStr && lastMonthStr !== currentMonthStr) {
+                let changed = false;
+                items.forEach(item => {
+                    if (item.category === 'monthly' && item.done) {
+                        item.done = false;
+                        changed = true;
+                    }
+                });
+                if (changed) saveToStorage();
+            }
+            localStorage.setItem(MONTH_KEY, currentMonthStr);
+        }
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            render();
+        }
+
+        function switchTab(cat) {
+            currentTab = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.cat === cat);
+            });
+            render();
+        }
+
+        function handleSearch() {
+            const input = document.getElementById('searchInput');
+            searchQuery = input.value.trim().toLowerCase();
+            document.getElementById('searchClear').style.display = searchQuery ? 'block' : 'none';
+            render();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchQuery = '';
+            document.getElementById('searchClear').style.display = 'none';
+            render();
+        }
+
+        function toggleDone(id, e) {
+            e.stopPropagation();
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.done = !item.done;
+                saveToStorage();
+            }
+        }
+
+        function toggleStar(id, e) {
+            e.stopPropagation();
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.starred = !item.starred;
+                saveToStorage();
+            }
+        }
+
+        function clearDoneItems() {
+            items = items.filter(i => !(i.category === currentTab && i.done));
+            saveToStorage();
+        }
+
+        function getEventBadge(dateStr) {
+            if (!dateStr) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const target = new Date(dateStr + 'T00:00:00');
+            const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return { text: 'Past', cls: 'past' };
+            if (diffDays === 0) return { text: 'Today', cls: 'accent' };
+            if (diffDays === 1) return { text: 'Tomorrow', cls: 'accent' };
+            return { text: `In ${diffDays} days`, cls: 'accent' };
+        }
+        function render() {
+            const cats = ['notes', 'tasks', 'shopping', 'monthly', 'events'];
+            cats.forEach(c => {
+                const count = items.filter(i => i.category === c && !i.done).length;
+                document.getElementById(`cnt-${c}`).innerText = count > 0 ? `(${count})` : '';
+            });
+            const starCount = items.filter(i => i.starred && !i.done).length;
+            document.getElementById('cnt-starred').innerText = starCount > 0 ? `(${starCount})` : '';
+
+            const pinnedContainer = document.getElementById('pinnedContainer');
+            const pinnedList = document.getElementById('pinnedList');
+            const activeStarred = items.filter(i => i.starred && !i.done);
+
+            if (currentTab !== 'starred' && activeStarred.length > 0 && !searchQuery) {
+                pinnedContainer.style.display = 'block';
+                pinnedList.innerHTML = activeStarred.map(item => `
+                    <div class="pinned-item" onclick="openEditor('${item.id}')">
+                        <span style="flex:1; padding-right:8px;">${escapeHtml(item.text.split('\n'))}</span>
+                        <span class="badge">${item.category}</span>
+                    </div>
+                `).join('');
+            } else {
+                pinnedContainer.style.display = 'none';
+            }
+
+            const titles = {
+                notes: 'Notes',
+                tasks: 'Tasks',
+                shopping: 'Shopping List',
+                monthly: 'Monthly Recurring',
+                events: 'Upcoming Events',
+                starred: 'Starred & Important'
+            };
+            document.getElementById('currentCategoryTitle').innerText = searchQuery ? 'Search Results' : titles[currentTab];
+
+            const hasDoneInTab = items.some(i => i.category === currentTab && i.done);
+            document.getElementById('clearDoneBtn').style.display = (!searchQuery && (currentTab === 'shopping' || currentTab === 'tasks') && hasDoneInTab) ? 'block' : 'none';
+
+            let filtered = items.filter(item => {
+                if (searchQuery) return item.text.toLowerCase().includes(searchQuery);
+                if (currentTab === 'starred') return item.starred;
+                return item.category === currentTab;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.done !== b.done) return a.done ? 1 : -1;
+                if (currentTab === 'events' || (a.category === 'events' && b.category === 'events')) {
+                    if (a.date && b.date) return a.date.localeCompare(b.date);
+                    if (a.date) return -1;
+                    if (b.date) return 1;
+                }
+                return b.updatedAt - a.updatedAt;
+            });
+
+            const listEl = document.getElementById('itemList');
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div class="empty-state">Nothing here yet.<br>Tap <b>+ New</b> to add something.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(item => {
+                const isCheckable = item.category !== 'notes';
+                const eventBadge = item.category === 'events' ? getEventBadge(item.date) : null;
+
+                return `
+                <div class="card ${item.done ? 'done' : ''}">
+                    ${isCheckable ? `<div class="check-circle" onclick="toggleDone('${item.id}', event)"></div>` : ''}
+                    <div class="card-body" onclick="openEditor('${item.id}')">
+                        <div class="card-text">${escapeHtml(item.text)}</div>
+                        <div class="card-meta">
+                            ${(currentTab === 'starred' || searchQuery) ? `<span class="badge">${item.category}</span>` : ''}
+                            ${item.category === 'monthly' ? `<span class="badge accent">Monthly</span>` : ''}
+                            ${eventBadge ? `<span class="badge ${eventBadge.cls}">${eventBadge.text}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="icon-btn ${item.starred ? 'starred' : ''}" onclick="toggleStar('${item.id}', event)">
+                            ${item.starred ? '★' : '☆'}
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        function openEditor(id = null) {
+            editingId = id;
+            const modal = document.getElementById('editorModal');
+            const textEl = document.getElementById('itemText');
+            const catEl = document.getElementById('itemCategory');
+            const dateEl = document.getElementById('itemDate');
+            const delBtn = document.getElementById('deleteItemBtn');
+
+            if (id) {
+                const item = items.find(i => i.id === id);
+                document.getElementById('editorTitle').innerText = 'Edit Item';
+                textEl.value = item.text;
+                catEl.value = item.category;
+                dateEl.value = item.date || '';
+                editorStarred = item.starred;
+                delBtn.style.display = 'block';
+            } else {
+                document.getElementById('editorTitle').innerText = 'New Item';
+                textEl.value = '';
+                catEl.value = (currentTab === 'starred') ? 'tasks' : currentTab;
+                dateEl.value = '';
+                editorStarred = (currentTab === 'starred');
+                delBtn.style.display = 'none';
+            }
+
+            updateStarBtnUI();
+            toggleDateInput();
+            modal.classList.add('open');
+        }
+
+        function toggleDateInput() {
+            const cat = document.getElementById('itemCategory').value;
+            document.getElementById('eventDateWrap').style.display = (cat === 'events') ? 'block' : 'none';
+        }
+
+        function toggleEditorStar() {
+            editorStarred = !editorStarred;
+            updateStarBtnUI();
+        }
+
+        function updateStarBtnUI() {
+            const btn = document.getElementById('starToggleBtn');
+            btn.classList.toggle('active', editorStarred);
+            btn.innerText = editorStarred ? '★ Starred' : '☆ Star';
+        }
+
+        function insertTemplate(tpl) {
+            const textEl = document.getElementById('itemText');
+            textEl.value = textEl.value ? textEl.value + '\n' + tpl : tpl;
+        }
+
+        function saveItem() {
+            const text = document.getElementById('itemText').value.trim();
+            if (!text) return;
+
+            const category = document.getElementById('itemCategory').value;
+            const date = (category === 'events') ? document.getElementById('itemDate').value : '';
+
+            if (editingId) {
+                const item = items.find(i => i.id === editingId);
+                if (item) {
+                    item.text = text;
+                    item.category = category;
+                    item.date = date;
+                    item.starred = editorStarred;
+                    item.updatedAt = Date.now();
+                }
+            } else {
+                items.unshift({
+                    id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    text,
+                    category,
+                    date,
+                    starred: editorStarred,
+                    done: false,
+                    updatedAt: Date.now()
+                });
+            }
+
+            closeModal('editorModal');
+            saveToStorage();
+        }
+
+        function deleteCurrentItem() {
+            if (!editingId) return;
+            items = items.filter(i => i.id !== editingId);
+            closeModal('editorModal');
+            saveToStorage();
+        }
+
+        function openDataModal() {
+            document.getElementById('dataModal').classList.add('open');
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(items, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateTag = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `workspace-backup-${dateTag}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        items = imported;
+                        saveToStorage();
+                        closeModal('dataModal');
+                        alert('Backup restored successfully!');
+                    } else {
+                        alert('Invalid backup file.');
+                    }
+                } catch (err) {
+                    alert('Error reading file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function closeModalOnBg(e, id) {
+            if (e.target.id === id) closeModal(id);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m]);
+        }
+
+        init();
+    </script>
+</body>
+</html>
