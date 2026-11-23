@@ -578,7 +578,7 @@
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
         </div>
     </div>
-    <script>
+        <script>
         const STORAGE_KEY = 'my_workspace_data_v1';
         const TPL_KEY = 'my_workspace_templates_v1';
         const MONTH_KEY = 'my_workspace_last_month';
@@ -588,12 +588,11 @@
             { id: 't1', name: 'Groceries', text: 'Milk\nBread\nEggs\nCoffee' },
             { id: 't2', name: 'Monthly Bill', text: 'Electricity bill - 15th' }
         ];
-
-        let items = [];
         let currentTab = 'notes';
         let searchQuery = '';
         let editingId = null;
         let editorStarred = false;
+        const expandedIds = new Set();
 
         function init() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -631,7 +630,7 @@
             render();
         }
 
-               function switchTab(cat) {
+        function switchTab(cat) {
             currentTab = cat;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.cat === cat);
@@ -755,7 +754,7 @@
                 return;
             }
 
-                        listEl.innerHTML = filtered.map(item => {
+            listEl.innerHTML = filtered.map(item => {
                 const isCheckable = item.category !== 'notes';
                 const eventBadge = item.category === 'events' ? getEventBadge(item.date) : null;
                 const isLong = item.text.length > 150 || item.text.split('\n').length > 4;
@@ -785,16 +784,10 @@
                 `;
             }).join('');
         }
-
-        const expandedIds = new Set();
-
         function toggleExpand(id, e) {
             e.stopPropagation();
-            if (expandedIds.has(id)) {
-                expandedIds.delete(id);
-            } else {
-                expandedIds.add(id);
-            }
+            if (expandedIds.has(id)) expandedIds.delete(id);
+            else expandedIds.add(id);
             render();
         }
 
@@ -844,7 +837,7 @@
             } else {
                 document.getElementById('editorTitle').innerText = 'New Item';
                 textEl.value = '';
-                catEl.value = (currentTab === 'starred') ? 'tasks' : currentTab;
+                catEl.value = (currentTab === 'starred' || currentTab === 'all') ? 'tasks' : currentTab;
                 dateEl.value = '';
                 editorStarred = (currentTab === 'starred');
                 delBtn.style.display = 'none';
@@ -872,7 +865,7 @@
             btn.innerText = editorStarred ? '★ Starred' : '☆ Star';
         }
 
-                function renderTemplates() {
+        function renderTemplates() {
             const bar = document.getElementById('templateBar');
             if (!bar) return;
             const chips = templates.map(t => `
@@ -958,7 +951,7 @@
             document.getElementById('dataModal').classList.add('open');
         }
 
-                function exportData() {
+        function exportData() {
             const payload = { items: items, templates: templates };
             const dataStr = JSON.stringify(payload, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
@@ -972,7 +965,7 @@
         }
 
         function importData(event) {
-            const file = event.target.files[0];
+            const file = event.target.files;
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -1019,3 +1012,4 @@
     </script>
 </body>
 </html>
+
