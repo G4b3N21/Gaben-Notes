@@ -661,7 +661,7 @@
                 pinnedContainer.style.display = 'block';
                 pinnedList.innerHTML = activeStarred.map(item => `
                     <div class="pinned-item" onclick="openEditor('${item.id}')">
-                        <span style="flex:1; padding-right:8px;">${escapeHtml(item.text.split('\n'))}</span>
+                        <span style="flex:1; padding-right:8px;">${escapeHtml(item.text.split('\n')[0])}</span>
                         <span class="badge">${item.category}</span>
                     </div>
                 `).join('');
